@@ -4,7 +4,10 @@ import signal
 import time
 import copy
 import traceback
-
+# import Random_Player from simulator
+from simulator import Random_Player
+from team67_mini import Team67
+from team12idfsnew import Team12
 TIME = 16
 MAX_PTS = 68
 
@@ -22,8 +25,94 @@ class Swagalicious():
 	def move(self, board, old_move, flag):
 		#You have to implement the move function with the same signature as this
 		#Find the list of valid cells allowed
+		maxval = -100000
+		bm = []
+		alpha = -100000
+		beta = 100000
 		cells = board.find_valid_move_cells(old_move)
-		return cells[random.randrange(len(cells))]
+		start_time = time.time()
+		for cell in cells:
+			if flag == 'x':
+				fl = 'o'
+			else:
+				fl = 'x'
+			board.update(old_move, cell, flag)
+			val = self.minimax(board, 1, cell, alpha, beta, fl, 0, start_time)
+			self.revert(board, cell, '-')
+			if val > maxval:
+				maxval = val
+				bm = cell
+		return bm
+
+	def minimax(self, board, depth, old_move, a, b, flag, isMax, start_time):
+		# First checking if terminal state has been reached
+		term_state = board.find_terminal_state()
+		if term_state[1] == 'WON' and term_state[0] == 'x' and isMax and flag == 'x' or term_state[1] == 'WON' and term_state[0] == 'o' and isMax and flag == 'o':
+			return 100000
+		elif term_state[1] == 'WON' and term_state[0] == 'x' and not isMax and flag == 'x' or term_state[1] == 'WON' and term_state[0] == 'o' and not isMax and flag == 'o':
+			return -100000
+		elif term_state[0] == 'NONE' and term_state[1] == 'DRAW':
+			return 0
+
+		if depth >= 4:
+			return self.heuristic(board, depth, isMax, flag, old_move)
+
+		cells = board.find_valid_move_cells(old_move)
+		if flag=='x':
+			fl = 'o'
+		else:
+			fl = 'x'
+		if isMax:
+			best = -100000
+		else:
+			best = 100000
+		for cell in cells:
+			if board.board_status[cell[0]][cell[1]]=='-':
+					board.update(old_move,cell,flag)
+					if isMax:
+						best = max(best,self.minimax(board, depth+1, cell, a, b, fl, (isMax+1)%2, start_time))
+					else:
+						best = min(best,self.minimax(board, depth+1, cell, a, b, fl, (isMax+1)%2, start_time))
+					self.revert(board, cell, '-')
+					if isMax:
+						a = max(best, a)
+					else:
+						b = min(best, b)
+					if time.time() - start_time> 15:
+						return best
+					if b<=a:
+						break
+		return best
+
+	def heuristic(self, board, depth, isMax, flag, old_move):
+		alt_flag = 'x'
+		if flag == 'x' and isMax == 1:
+			alt_flag = 'o'
+		if flag == 'o' and isMax == 0:
+			flag = 'x'
+			alt_flag = '0'
+		if flag == 'x' and isMax == 0:
+			flag = 'o'
+			alt_flag = 'x'
+		bs = board.block_status
+		score = 0
+		for i in range(4):
+			for j in range(4):
+				if bs[i][j] == flag:
+					score += 1
+				elif bs[i][j] == 'd':
+					score += 0.5
+				elif bs[i][j] == alt_flag:
+					score -= 1
+		return score
+
+	def revert(self, board, new_move, ply):
+		#updating the game board and block status as per the move that has been passed in the arguments
+		board.board_status[new_move[0]][new_move[1]] = ply
+		x = new_move[0]/4
+		y = new_move[1]/4
+		fl = 0
+		board.block_status[x][y]=ply
 
 class Manual_Player:
 	def __init__(self):
@@ -360,7 +449,7 @@ if __name__ == '__main__':
 
 	elif option == '2':
 		obj1 = Swagalicious()
-		obj2 = Manual_Player()
+		obj2 = Team12()
 	elif option == '3':
 		obj1 = Manual_Player()
 		obj2 = Manual_Player()

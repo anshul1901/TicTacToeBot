@@ -1,0 +1,9 @@
+Start from center 4, if SmallBoard is blank
+
+Total number of terminal states: 12
+
+no of terminal states per block:
+2 | 3 | 3 | 2
+3 | 4 | 4 | 3
+3 | 4 | 4 | 3
+2 | 3 | 3 | 2
